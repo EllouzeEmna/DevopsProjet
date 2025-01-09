@@ -27,7 +27,7 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
 
   mysql:
-    image: mysql:14.14
+    image: mysql:5.7
     container_name: mysql
     ports:
       - "3306:3306"
