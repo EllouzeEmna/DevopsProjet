@@ -3,7 +3,7 @@ services:
   angular-app:
     build:
       context: ./angular-frontend
-      dockerfile: Dockerfile
+      dockerfile: ./angular-frontend/Dockerfile
     ports:
       - "80:80"
     depends_on:
@@ -13,7 +13,7 @@ services:
   backend:
     build:
       context: ./springboot-backend
-      dockerfile: Dockerfile
+      dockerfile: ./springboot-backend/Dockerfile
     ports:
       - "8080:8080"
     depends_on:
