@@ -18,7 +18,7 @@ services:
       - "8080:8080"
     depends_on:
       - mysql
-    entrypoint: /bin/sh -c "until mysql -h mysql -u user -ppassword -e 'show databases'; do echo waiting for mysql; sleep 2; done; java -jar /app.jar"
+    entrypoint: /bin/sh -c "until nc -z mysql 3306; do echo waiting for mysql; sleep 2; done; java -jar /app.jar"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/aston_villa
       SPRING_DATASOURCE_USERNAME: user
