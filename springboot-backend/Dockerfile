@@ -24,4 +24,4 @@ COPY --from=build /app/target/BankApi.jar app.jar
 EXPOSE 8080
 
 # Run the application with dockerize
-ENTRYPOINT ["dockerize", "-wait", "tcp://db:3306", "-timeout", "300s", "java", "-jar", "app.jar"]
+ENTRYPOINT ["dockerize", "-wait", "tcp://mysql:3306", "-timeout", "300s", "java", "-jar", "app.jar"]
