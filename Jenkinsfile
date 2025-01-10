@@ -1,31 +1,68 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKERHUB_USERNAME = 'emnaellouze123487'  // Votre nom d'utilisateur Docker Hub
+        DOCKERHUB_PASSWORD = credentials('dockerhub-credentials')  // ID de vos credentials Docker Hub
+        VM2_USER = 'recette'           // Utilisateur SSH pour la VM2
+        VM2_IP = '192.168.43.207'      // Adresse IP de la VM2
+        VM2_APP_PATH = '/home/recette/app'  // Répertoire de déploiement sur la VM2
+        DOCKER_CLI_EXPERIMENTAL = "enabled"
+    }
+
     stages {
-        stage('Clone Repositories') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'master', url: 'https://github.com/EllouzeEmna/DevopsProjet.git'
+                git url: 'https://github.com/EllouzeEmna/DevopsProjet.git', branch: 'master'
             }
         }
 
         stage('Build Docker Images') {
             steps {
-                sh 'docker-compose -f docker-compose.yml build'
+                sh 'docker-compose build'
             }
         }
 
-        stage('Push to CI') {
+        stage('Run Tests') {
             steps {
-                sh 'scp -r . recette@192.168.43.207:/home/user/builds'
+                sh '''
+                docker-compose up -d
+                docker run --rm --network=bank-automation_mynetwork bank-automation_backend mvn test
+                docker-compose down
+                '''
             }
         }
 
-        stage('Deploy on CI') {
+        stage('Push Docker Images to Docker Hub') {
             steps {
-                sshagent(['ssh-credentials-ci']) {
-                    sh 'ssh recette@192.168.43.207 "cd /home/user/builds && docker-compose up -d"'
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
+                        sh 'docker-compose push'
+                    }
                 }
             }
+        }
+
+          stage('Deploy on VM2') {
+            steps {
+                sshagent(['ssh-credentials-ci']) {
+                    sh '''
+                    ssh $VM2_USER@$VM2_IP "mkdir -p $VM2_APP_PATH"
+                    scp docker-compose.yml $VM2_USER@$VM2_IP:$VM2_APP_PATH/
+                    ssh $VM2_USER@$VM2_IP "
+                        cd $VM2_APP_PATH &&
+                        docker-compose pull &&
+                        docker-compose up -d
+                    "
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()  // Nettoyer le workspace après l'exécution
         }
     }
 }
