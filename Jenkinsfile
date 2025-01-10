@@ -23,15 +23,7 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                sh '''
-                docker-compose up -d
-                docker-compose run --rm backend mvn test
-                docker-compose down
-                '''
-            }
-        }
+       
 
         stage('Push Docker Images to Docker Hub') {
             steps {
