@@ -18,7 +18,13 @@ FROM eclipse-temurin:17-jdk-slim
 WORKDIR /app
 
 # Copy the built JAR file from the build stage
-COPY --from=build /app/target/BankApi.jar app.jar
+COPY --from=build /app/target/springboot-backend.jar app.jar
+
+# Install dockerize for waiting on dependencies (e.g., MySQL)
+RUN apk add --no-cache wget && \
+    wget https://github.com/jwilder/dockerize/releases/download/v0.6.1/dockerize-linux-amd64-v0.6.1.tar.gz && \
+    tar -C /usr/local/bin -xzvf dockerize-linux-amd64-v0.6.1.tar.gz && \
+    rm dockerize-linux-amd64-v0.6.1.tar.gz
 
 # Expose the port the app will run on
 EXPOSE 8080
