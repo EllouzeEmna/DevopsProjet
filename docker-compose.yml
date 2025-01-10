@@ -1,13 +1,15 @@
-version: '3.3'
+version: '3.7'
 services:
   angular-app:
     build:
       context: ./angular-frontend
       dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "8082:80"  # Updated to match new frontend port
+    networks:
+      - mynetwork
     depends_on:
-      - backend
+      - backend  # Ensure the backend service starts first
       - mysql
 
   backend:
@@ -15,28 +17,43 @@ services:
       context: ./springboot-backend
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
-    depends_on:
-      - mysql
+      - "8081:8080"  # Updated to match new backend port
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/aston_villa
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/aston_villa?serverTimezone=UTC&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
+    networks:
+      - mynetwork
+    depends_on:
+      - mysql  # Ensure the MySQL service starts first
+    entrypoint: ["dockerize", "-wait", "tcp://mysql:3306", "-timeout", "600s", "java", "-jar", "app.jar"]
 
   mysql:
-    image: mysql:5.7
+    image: mysql:8.0
     container_name: mysql
-    ports:
-      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: aston_villa
       MYSQL_USER: user
       MYSQL_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/bin/mysql --user=root --password=root --execute \"SHOW DATABASES;\""]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    ports:
+      - "3306:3306"
+    networks:
+      - mynetwork
     volumes:
-      - mysql_data:/var/lib/mysql
+      - db_data:/var/lib/mysql  # Updated volume name for consistency
+    command: --default-authentication-plugin=mysql_native_password
+
+networks:
+  mynetwork:
+    driver: bridge  # Use a bridge network for communication between containers
 
 volumes:
-  mysql_data:
+  db_data:  # Define a named volume for MySQL data persistence
