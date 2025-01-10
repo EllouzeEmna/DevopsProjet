@@ -27,7 +27,7 @@ pipeline {
             steps {
                 sh '''
                 docker-compose up -d
-                docker run --rm --network=bank-automation_mynetwork bank-automation_backend mvn test
+                docker-compose run --rm backend mvn test
                 docker-compose down
                 '''
             }
